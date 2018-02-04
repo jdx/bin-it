@@ -22,7 +22,7 @@ export function info(): info.Info {
   pjson['bin-it'] = pjson['bin-it'] || {}
   let nodeVersion = pjson['bin-it'].node || process.versions.node
   let bin = pjson.anycli.bin || Object.keys(pjson.bin) || pjson.name
-  const sha = qq.x('git', ['rev-parse', '--short', 'HEAD'], {stdio: [0, null, 2]}).stdout
+  const sha = qq.x('git', ['rev-parse', 'HEAD'], {stdio: [0, null, 2]}).stdout
   // let debVersion = `${shortVersion}-1`
   // let unversionedBase = `${pjson.name}-${opts.os}-${opts.arch}`
   return {

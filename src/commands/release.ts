@@ -59,8 +59,8 @@ export default class Release extends Command {
         file: fs.createReadStream(file),
         contentType: 'application/gzip',
         contentLength: fs.statSync(file).size,
-        name: 'bin-it-darwin-x64.tar.gz',
-        label: 'bin-it-darwin-x64.tar.gz',
+        name: qq.path.basename(file),
+        label: qq.path.basename(file),
       })
       debug(result)
     }

@@ -1,5 +1,7 @@
 import {Command, flags} from '@anycli/command'
-import axios from 'axios'
+import * as Octokit from '@octokit/rest'
+import cli from 'cli-ux'
+import * as fs from 'fs-extra'
 
 import {info} from '../project'
 
@@ -17,20 +19,60 @@ export default class Release extends Command {
     const {flags} = this.parse(Release)
     this.info = info(flags)
 
-    const github = axios.create({
-      baseURL: 'https://api.github.com',
-      headers: {
-        authorization: process.env.GH_TOKEN,
-      }
-    })
+    // const github = axios.create({
+    //   baseURL: 'https://api.github.com',
+    //   headers: {
+    //     authorization: `Bearer ${process.env.GH_TOKEN}`,
+    //   }
+    // })
 
-    await github.post('/repos/jdxcode/bin-it/releases', {
-      tag_name: 'v1.0.0-test1',
-      target_commitish: 'master',
-      name: 'v1.0.0-test1',
-      body: 'Description of the release',
-      draft: false,
-      prerelease: true
+    // await github.post('/repos/jdxcode/bin-it/releases', {
+    //   tag_name: 'v0.0.0-test1',
+    //   // target_commitish: 'ea6ac3b',
+    //   // name: 'v0.0.0-test1',
+    //   // body: 'Description of the release',
+    //   draft: false,
+    //   prerelease: true
+    // })
+
+    // await github.post('://<upload_url>/repos/:owner/:repo/releases/:id/assets?name=foo.zip', {
+    //   tag_name: 'v0.0.0-test1',
+    //   // target_commitish: 'ea6ac3b',
+    //   // name: 'v0.0.0-test1',
+    //   // body: 'Description of the release',
+    //   draft: false,
+    //   prerelease: true
+    // })
+    const octokit = new Octokit()
+    octokit.authenticate({
+      type: 'token',
+      token: process.env.GH_TOKEN,
     })
+    const {data: release} = await octokit.repos.createRelease({
+      owner: 'jdxcode',
+      repo: 'bin-it',
+      tag_name: 'v0.0.0-test3',
+      prerelease: true,
+    })
+    console.dir(release)
+    const file = 'dist/bin-it-darwin-x64.tar.gz'
+    const result = await octokit.repos.uploadAsset({
+      url: release.upload_url,
+      file: fs.createReadStream(file),
+      contentType: 'application/gzip',
+      contentLength: fs.statSync(file).size,
+      name: 'bin-it-darwin-x64.tar.gz',
+      label: 'test label',
+    })
+    console.dir(result)
+  }
+
+  async catch(err: any) {
+    if (err.response && err.response.data && err.response.data.errors) {
+      for (let e of err.response.data.errors) {
+        cli.warn(e)
+      }
+    }
+    super.catch(err)
   }
 }

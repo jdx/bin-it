@@ -24,7 +24,10 @@
     "cli-ux": "^3.3.13",
     "execa": "^0.9.0",
     "fs-extra": "^5.0.0",
-    "shelljs": "^0.8.1"
+    "http-call": "^5.0.2",
+    "qqjs": "^0.0.1",
+    "shelljs": "^0.8.1",
+    "tslib": "^1.9.0"
   },
   "devDependencies": {
     "@anycli/test": "^0.10.9",
@@ -38,6 +41,7 @@
     "@types/node-notifier": "^0.0.28",
     "@types/read-pkg": "^3.0.0",
     "@types/shelljs": "^0.7.8",
+    "@types/write-json-file": "^2.2.1",
     "chai": "^4.1.2",
     "concurrently": "^3.5.1",
     "eslint": "^4.17.0",

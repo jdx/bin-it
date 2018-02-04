@@ -2,14 +2,17 @@ import {Command, flags} from '@anycli/command'
 import * as Octokit from '@octokit/rest'
 import cli from 'cli-ux'
 import * as fs from 'fs-extra'
+import * as qq from 'qqjs'
 
 import {info} from '../project'
 
+const debug = require('debug')('release')
+
 export default class Release extends Command {
   static flags = {
-    os: flags.enum({required: true, options: ['win32', 'darwin', 'linux']}),
-    arch: flags.enum({required: true, options: ['x64', 'x32', 'arm']}),
-    channel: flags.string({required: true}),
+    // channel: flags.string({required: true}),
+    prerelease: flags.boolean(),
+    draft: flags.boolean(),
   }
 
   info!: info.Info
@@ -17,55 +20,50 @@ export default class Release extends Command {
   async run() {
     if (!process.env.GH_TOKEN) throw new Error('GH_TOKEN must be set')
     const {flags} = this.parse(Release)
-    this.info = info(flags)
+    this.info = info()
 
-    // const github = axios.create({
-    //   baseURL: 'https://api.github.com',
-    //   headers: {
-    //     authorization: `Bearer ${process.env.GH_TOKEN}`,
-    //   }
-    // })
-
-    // await github.post('/repos/jdxcode/bin-it/releases', {
-    //   tag_name: 'v0.0.0-test1',
-    //   // target_commitish: 'ea6ac3b',
-    //   // name: 'v0.0.0-test1',
-    //   // body: 'Description of the release',
-    //   draft: false,
-    //   prerelease: true
-    // })
-
-    // await github.post('://<upload_url>/repos/:owner/:repo/releases/:id/assets?name=foo.zip', {
-    //   tag_name: 'v0.0.0-test1',
-    //   // target_commitish: 'ea6ac3b',
-    //   // name: 'v0.0.0-test1',
-    //   // body: 'Description of the release',
-    //   draft: false,
-    //   prerelease: true
-    // })
     const octokit = new Octokit()
     octokit.authenticate({
       type: 'token',
       token: process.env.GH_TOKEN,
     })
-    const {data: release} = await octokit.repos.createRelease({
-      owner: 'jdxcode',
-      repo: 'bin-it',
-      target_commitish: 'v0.0.0-test3',
-      tag_name: 'v0.0.0-test3',
-      prerelease: true,
-    })
-    console.dir(release)
-    const file = 'dist/bin-it-darwin-x64.tar.gz'
-    const result = await octokit.repos.uploadAsset({
-      url: release.upload_url,
-      file: fs.createReadStream(file),
-      contentType: 'application/gzip',
-      contentLength: fs.statSync(file).size,
-      name: 'bin-it-darwin-x64.tar.gz',
-      label: 'bin-it-darwin-x64.tar.gz',
-    })
-    console.dir(result)
+    const tag = `v${this.info.version}`
+    let release: any
+    try {
+      const {data} = await octokit.repos.createRelease({
+        owner: 'jdxcode',
+        repo: 'bin-it',
+        target_commitish: this.info.sha,
+        tag_name: tag,
+        prerelease: flags.prerelease,
+        draft: flags.draft,
+      })
+      debug(data)
+      release = data
+    } catch (err) {
+      debug(err)
+      // try getting a release if we can't create one
+      const {data} = await octokit.repos.getReleaseByTag({
+        owner: 'jdxcode',
+        repo: 'bin-it',
+        tag,
+      })
+      release = data
+    }
+    const assets = qq.globby([`dist/${this.info.name}-v${this.info.version}*.tar.gz`])
+    debug(assets)
+
+    for (let file of assets) {
+      const result = await octokit.repos.uploadAsset({
+        url: release.upload_url,
+        file: fs.createReadStream(file),
+        contentType: 'application/gzip',
+        contentLength: fs.statSync(file).size,
+        name: 'bin-it-darwin-x64.tar.gz',
+        label: 'bin-it-darwin-x64.tar.gz',
+      })
+      debug(result)
+    }
   }
 
   async catch(err: any) {

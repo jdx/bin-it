@@ -49,7 +49,7 @@ writeJSFiles() {
   qq.mkdirp(qq.path.dirname(this.workDir))
   qq.x('yarn')
   qq.x('yarn run prepublishOnly')
-  qq.x('yarn pack')
+  qq.x('npm pack')
   qq.x(`tar xvzf ${tarball}`)
   qq.mv('package', this.workDir)
   qq.rm(tarball)

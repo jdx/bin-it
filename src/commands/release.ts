@@ -50,7 +50,7 @@ export default class Release extends Command {
       })
       release = data
     }
-    const assets = qq.globby([`dist/${this.info.name}-v${this.info.version}*.tar.gz`])
+    const assets = qq.globby([`dist/${this.info.version}/${this.info.name}-v${this.info.version}*.tar.gz`])
     debug(assets)
 
     for (let file of assets) {

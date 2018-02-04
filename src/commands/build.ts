@@ -27,9 +27,9 @@ export default class Build extends Command {
     this.writeJSFiles()
     this.fetchNodeBin()
 
-    let tgzPath = qq.path.join(this.info.dist, versionedBase + '.tar.gz')
+    let tgzPath = qq.path.join(this.info.dist, this.info.version, versionedBase + '.tar.gz')
     // let txzPath = qq.path.join(this.info.dist, versionedBase + '.tar.xz')
-    qq.mkdirp(this.info.dist)
+    qq.mkdirp(qq.path.dirname(tgzPath))
     qq.cd(this.info.tmp)
     // qq.x(`tar c ${versionedBase} | xz > ${txzPath}`)
     qq.x(`tar czf ${tgzPath} ${versionedBase}`)

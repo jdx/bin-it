@@ -51,6 +51,7 @@ export default class Release extends Command {
     const {data: release} = await octokit.repos.createRelease({
       owner: 'jdxcode',
       repo: 'bin-it',
+      commit_ish: 'v0.0.0-test3',
       tag_name: 'v0.0.0-test3',
       prerelease: true,
     })
@@ -62,7 +63,7 @@ export default class Release extends Command {
       contentType: 'application/gzip',
       contentLength: fs.statSync(file).size,
       name: 'bin-it-darwin-x64.tar.gz',
-      label: 'test label',
+      label: 'bin-it-darwin-x64.tar.gz',
     })
     console.dir(result)
   }

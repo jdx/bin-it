@@ -16,12 +16,12 @@ export default class Build extends Command {
   versionedBase!: string
   unversionedBase!: string
   debVersion!: string
-  nodeVersion = '9.5.0'
+  nodeVersion = process.versions.node
   arch = 'x64'
   os = 'darwin'
   root = qq.cwd()
-  tmp = qq.path.join(this.root, 'tmp/package')
-  dist = qq.path.join(this.root, 'tmp/dist')
+  tmp = qq.path.join(this.root, 'tmp', 'package')
+  dist = qq.path.join(this.root, 'dist')
   tgzPath!: string
   txzPath!: string
 
@@ -30,7 +30,9 @@ export default class Build extends Command {
     this.channel = flags.channel
     this.os = flags.os
     this.arch = flags.arch
-    const {name, version, ...pjson} = qq.readJSON([qq.cwd(), 'package.json'])
+    const {name, version, ...pjson} = qq.readJSON([this.root, 'package.json'])
+    pjson['bin-it'] = pjson['bin-it'] || {}
+    if (pjson['bin-it'].node) this.nodeVersion = pjson['bin-it'].node
     this.bin = pjson.anycli.bin || Object.keys(pjson.bin) || pjson.name
     this.name = name
     const sha = qq.x('git', ['rev-parse', '--short', 'HEAD']).stdout
@@ -40,7 +42,7 @@ export default class Build extends Command {
     this.versionedBase = `${this.name}-v${this.version}-${this.os}-${this.arch}`
     this.unversionedBase = `heroku-cli-${this.os}-${this.arch}`
     this.tgzPath = qq.path.join(this.dist, this.unversionedBase + '.tar.gz')
-    this.tgzPath = qq.path.join(this.dist, this.unversionedBase + '.tar.xz')
+    this.txzPath = qq.path.join(this.dist, this.unversionedBase + '.tar.xz')
     this.writeJSFiles()
     this.fetchNodeBin()
 
@@ -56,17 +58,16 @@ export default class Build extends Command {
   }
 
 writeJSFiles() {
-  const tarball = `${this.name}-v${this.shortVersion}.tgz`
-  qq.rm([this.tmp, tarball])
-  qq.rm([this.tmp, 'package'])
-  qq.mkdirp(this.tmp)
+  const tarball = qq.path.join(this.root, `${this.name}-v${this.shortVersion}.tgz`)
+  qq.rm(this.tmp)
+  qq.mkdirp([this.tmp, '..'])
   qq.x('yarn')
   qq.x('yarn run prepublishOnly')
   qq.x('yarn pack')
-  qq.cd(this.tmp)
-  qq.mv(['..', tarball], ['.', tarball])
+  qq.cd([this.tmp, '..'])
   qq.x(`tar xvzf ${tarball}`)
-  qq.cp('../../yarn.lock', 'yarn.lock')
+  qq.rm(tarball)
+  qq.cp([this.root, 'yarn.lock'], this.tmp)
   qq.x('yarn install --production --non-interactive')
   qq.write([this.tmp, 'bin', this.bin], `#!/usr/bin/env bash
 set -e
@@ -100,6 +101,7 @@ else
   ${this.scopedEnvVarKey('CLI_BINPATH')}="\$DIR/${this.bin}" "\$DIR/node" "\$DIR/${this.bin}.js" "\$@"
 fi
 `)
+  qq.chmod([this.tmp, 'bin', this.bin], 0o755)
   }
 
   scopedEnvVarKey(k: string) {
@@ -110,11 +112,21 @@ fi
   }
 
   fetchNodeBin() {
-    // const nodeArch = 'x64'
-    const nodeBase = `node-v${this.nodeVersion}-${this.os}-${this.arch}`
-    const url = `https://nodejs.org/dist/v${this.nodeVersion}/${nodeBase}.tar.xz`
-    qq.mkdirp([this.tmp, 'node'])
-    qq.x(`curl -fSsL "${url}" | tar -C "${this.tmp}/node" -xJ`)
-    qq.mv(`${this.tmp}/node/${nodeBase}/bin/node`, `${this.tmp}/package/bin/node`)
+    if (this.os === 'win32') {
+      // const nodeExt = '.exe'
+      // const nodeBase = `node-v${this.nodeVersion}-win-${this.arch}`
+      // const url = `https://nodejs.org/dist/v${this.nodeVersion}/node-v${this.nodeVersion}-win-${this.arch}.7z`
+      // qq.x(`curl -fSsLo ${this.tmp}/node/${nodeBase}.7z ${url}`)
+      // qq.cd([this.tmp, 'node'])
+      // 7z x -bd -y "${TMP_DIR}/node/${node_base}.7z" > /dev/null
+      // mv "${node_base}/node.exe" "$TMP_DIR/cache/node/${node_base}"
+    } else {
+      const nodeArch = this.arch === 'arm' ? 'armv7l' : this.arch
+      const nodeBase = `node-v${this.nodeVersion}-${this.os}-${nodeArch}`
+      const url = `https://nodejs.org/dist/v${this.nodeVersion}/${nodeBase}.tar.xz`
+      qq.mkdirp([this.tmp, 'node'])
+      qq.x(`curl -fSsL "${url}" | tar -C "${this.tmp}/node" -xJ`)
+      qq.mv(`${this.tmp}/../node/${nodeBase}/bin/node`, [this.tmp, '/bin/node'])
+    }
   }
 }

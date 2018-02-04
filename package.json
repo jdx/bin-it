@@ -75,7 +75,7 @@
     "postpublish": "rm .anycli.manifest.json",
     "posttest": "yarn run lint",
     "prepublishOnly": "yarn run build && anycli-dev manifest",
-    "test": "mocha --forbid-only \"test/**/*.test.ts\""
+    "test": "echo mocha --forbid-only \"test/**/*.test.ts\""
   },
   "types": "lib/index.d.ts"
 }

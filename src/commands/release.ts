@@ -51,7 +51,7 @@ export default class Release extends Command {
     const {data: release} = await octokit.repos.createRelease({
       owner: 'jdxcode',
       repo: 'bin-it',
-      commit_ish: 'v0.0.0-test3',
+      target_commitish: 'v0.0.0-test3',
       tag_name: 'v0.0.0-test3',
       prerelease: true,
     })

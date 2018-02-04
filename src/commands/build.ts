@@ -44,7 +44,7 @@ export default class Build extends Command {
   }
 
 writeJSFiles() {
-  const tarball = qq.path.join(`${this.info.name}-v${this.info.version}.tgz`)
+  const tarball = qq.path.join(`${this.info.name}-${this.info.version}.tgz`)
   qq.rm(this.workDir)
   qq.mkdirp(qq.path.dirname(this.workDir))
   qq.x('yarn')

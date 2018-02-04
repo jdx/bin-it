@@ -35,7 +35,7 @@ export function info(opts: {channel: string, os: string, arch: string, root?: st
   let bin = pjson.anycli.bin || Object.keys(pjson.bin) || pjson.name
   const sha = qq.x('git', ['rev-parse', '--short', 'HEAD'], {stdio: [0, null, 2]}).stdout
   let version = `${pjson.version}-${sha}`
-  let shortVersion = version
+  let shortVersion = pjson.version
   let debVersion = `${shortVersion}-1`
   let versionedBase = `${pjson.name}-v${pjson.version}-${opts.os}-${opts.arch}`
   let unversionedBase = `${pjson.name}-${opts.os}-${opts.arch}`
